@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -11,7 +12,7 @@ namespace RxNetApp
 {
     internal static class Program
     {
-        #region Asynchronous Stream
+        #region Asynchronous Stream: IAsyncEnumberable
 
         private static async IAsyncEnumerable<int> GetNumbersAsync(
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -26,20 +27,35 @@ namespace RxNetApp
 
         private static async Task PrintNumbers1(CancellationToken cancellationToken = default)
         {
-            await foreach (var number in GetNumbersAsync(cancellationToken))
-            {
-                if (number % 2 == 1)
+            #region Vanilla C#
+
+            // await foreach (var number in GetNumbersAsync(cancellationToken))
+            // {
+            //     if (number % 2 == 1)
+            //     {
+            //         Console.Write(number + " ");   
+            //     }
+            // }
+
+            #endregion
+
+            #region System.Linq.AsyncEnumerable
+
+            await GetNumbersAsync(cancellationToken)
+                .Where(number => number % 2 == 1)
+                .ForEachAsync(number =>
                 {
                     Console.Write(number + " ");
-                }
-            }
+                }, cancellationToken);
+
+            #endregion
 
             Console.Write("Completed");
         }
 
         #endregion
 
-        #region ReactiveX
+        #region ReactiveX: IObservable
 
         private static IObservable<int> GetNumbersObservable(CancellationToken cancellationToken = default) =>
             Observable.Create<int>(async observer =>

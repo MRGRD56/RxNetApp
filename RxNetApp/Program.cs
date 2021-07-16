@@ -19,7 +19,7 @@ namespace RxNetApp
             var random = new Random();
             for (var i = 0; i < 10; i++)
             {
-                await Task.Delay(random.Next(300, 1500), cancellationToken);
+                await Task.Delay(random.Next(50, 200), cancellationToken);
                 yield return i;
             }
         }
@@ -28,9 +28,13 @@ namespace RxNetApp
         {
             await foreach (var number in GetNumbersAsync(cancellationToken))
             {
-                if (number % 2 != 0) continue;
-                Console.Write(number + " ");
+                if (number % 2 == 1)
+                {
+                    Console.Write(number + " ");
+                }
             }
+
+            Console.Write("Completed");
         }
 
         #endregion
@@ -51,7 +55,6 @@ namespace RxNetApp
                     }
 
                     await Task.Delay(random.Next(50, 200), cancellationToken);
-                    //Thread.Sleep(random.Next(300, 1500));
                     observer.OnNext(i);
                 }
             });
@@ -59,11 +62,13 @@ namespace RxNetApp
         private static async Task PrintNumbers2(CancellationToken cancellationToken = default)
         {
             var observable = GetNumbersObservable(cancellationToken);
-            await observable.ForEachAsync(number =>
-            {
-                Console.Write($"{number} ");
-            }, cancellationToken);
-            
+            await observable
+                .Where(number => number % 2 == 1)
+                .ForEachAsync(number =>
+                {
+                    Console.Write($"{number} ");
+                }, cancellationToken);
+
             Console.Write("Completed");
         }
 
@@ -71,7 +76,8 @@ namespace RxNetApp
 
         private static async Task Main(string[] args)
         {
-            //await PrintNumbers1();
+            await PrintNumbers1();
+            Console.WriteLine();
             await PrintNumbers2();
         }
     }

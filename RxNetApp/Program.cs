@@ -89,10 +89,28 @@ namespace RxNetApp
 
         #endregion
 
+        #region IAsyncEnumerable -> IObservable
+
+        private static async Task PrintNumbers3(CancellationToken cancellationToken = default)
+        {
+            var observable = GetNumbers1(cancellationToken).ToObservable();
+            await observable
+                .Where(number => number % 2 == 1)
+                .ForEachAsync(number =>
+            {
+                Console.Write(number + " ");
+            }, cancellationToken);
+            
+            Console.Write("Completed\n");
+        }
+
+        #endregion
+
         private static async Task Main(string[] args)
         {
             await PrintNumbers1();
             await PrintNumbers2();
+            await PrintNumbers3();
         }
     }
 }

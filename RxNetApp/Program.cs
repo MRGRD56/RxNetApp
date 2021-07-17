@@ -12,15 +12,16 @@ namespace RxNetApp
 {
     internal static class Program
     {
+        private static readonly Random Random = new();
+        
         #region Asynchronous Stream: IAsyncEnumberable
 
-        private static async IAsyncEnumerable<int> GetNumbersAsync(
+        private static async IAsyncEnumerable<int> GetNumbers1(
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var random = new Random();
             for (var i = 0; i < 10; i++)
             {
-                await Task.Delay(random.Next(50, 200), cancellationToken);
+                await Task.Delay(Random.Next(50, 200), cancellationToken);
                 yield return i;
             }
         }
@@ -41,7 +42,7 @@ namespace RxNetApp
 
             #region System.Linq.AsyncEnumerable
 
-            await GetNumbersAsync(cancellationToken)
+            await GetNumbers1(cancellationToken)
                 .Where(number => number % 2 == 1)
                 .ForEachAsync(number =>
                 {
@@ -50,18 +51,16 @@ namespace RxNetApp
 
             #endregion
 
-            Console.Write("Completed");
+            Console.Write("Completed\n");
         }
 
         #endregion
 
         #region ReactiveX: IObservable
 
-        private static IObservable<int> GetNumbersObservable(CancellationToken cancellationToken = default) =>
+        private static IObservable<int> GetNumbers2(CancellationToken cancellationToken = default) =>
             Observable.Create<int>(async observer =>
             {
-                var random = new Random();
-
                 for (var i = 0; i < 10; i++)
                 {
                     if (cancellationToken.IsCancellationRequested)
@@ -70,14 +69,14 @@ namespace RxNetApp
                         break;
                     }
 
-                    await Task.Delay(random.Next(50, 200), cancellationToken);
+                    await Task.Delay(Random.Next(50, 200), cancellationToken);
                     observer.OnNext(i);
                 }
             });
 
         private static async Task PrintNumbers2(CancellationToken cancellationToken = default)
         {
-            var observable = GetNumbersObservable(cancellationToken);
+            var observable = GetNumbers2(cancellationToken);
             await observable
                 .Where(number => number % 2 == 1)
                 .ForEachAsync(number =>
@@ -85,7 +84,7 @@ namespace RxNetApp
                     Console.Write($"{number} ");
                 }, cancellationToken);
 
-            Console.Write("Completed");
+            Console.Write("Completed\n");
         }
 
         #endregion
@@ -93,7 +92,6 @@ namespace RxNetApp
         private static async Task Main(string[] args)
         {
             await PrintNumbers1();
-            Console.WriteLine();
             await PrintNumbers2();
         }
     }

@@ -19,10 +19,10 @@ namespace RxNetApp
         private static async IAsyncEnumerable<int> GetNumbers1(
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 15; i++)
             {
-                await Task.Delay(Random.Next(50, 200), cancellationToken);
-                yield return i;
+                var number = await NumbersRepository.GetNumberAsync(cancellationToken);
+                yield return number;
             }
         }
 
@@ -61,7 +61,7 @@ namespace RxNetApp
         private static IObservable<int> GetNumbers2(CancellationToken cancellationToken = default) =>
             Observable.Create<int>(async observer =>
             {
-                for (var i = 0; i < 10; i++)
+                for (var i = 0; i < 15; i++)
                 {
                     if (cancellationToken.IsCancellationRequested)
                     {
@@ -69,8 +69,8 @@ namespace RxNetApp
                         break;
                     }
 
-                    await Task.Delay(Random.Next(50, 200), cancellationToken);
-                    observer.OnNext(i);
+                    var number = await NumbersRepository.GetNumberAsync(cancellationToken);
+                    observer.OnNext(number);
                 }
             });
 
@@ -105,12 +105,41 @@ namespace RxNetApp
         }
 
         #endregion
+        
+        #region Callback
+
+        public static async Task GetNumbers4(Action<int> onNext, CancellationToken cancellationToken = default)
+        {
+            for (var i = 0; i < 15; i++)
+            {
+                if (cancellationToken.IsCancellationRequested) return;
+
+                var number = await NumbersRepository.GetNumberAsync(cancellationToken);
+                onNext(number);
+            }
+        }
+
+        public static async Task PrintNumbers4(CancellationToken cancellationToken = default)
+        {
+            await GetNumbers4(number =>
+            {
+                if (number % 2 == 1)
+                {
+                    Console.Write(number + " ");
+                }
+            }, cancellationToken);
+            
+            Console.Write("Completed\n");
+        }
+        
+        #endregion
 
         private static async Task Main(string[] args)
         {
             await PrintNumbers1();
             await PrintNumbers2();
             await PrintNumbers3();
+            await PrintNumbers4();
         }
     }
 }
